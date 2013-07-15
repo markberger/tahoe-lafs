@@ -540,3 +540,86 @@ class TooParallel(GridTestMixin, unittest.TestCase):
         return d
 
     test_immutable.timeout = 80
+
+
+class HappyIsHealthy(GridTestMixin, unittest.TestCase):
+    # These are tests for ticket #614. This ticket redefines healthy to be
+    # whether the current share configuration meets the servers-of-happiness test.
+    # In order to close #614, all of these tests must pass.
+
+    def copy_share_to_server(self, uri, share_number, server_number):
+        ss = self.g.servers_by_number[server_number]
+        # Copy share i from the directory associated with the first
+        # storage server to the directory associated with this one.
+        assert self.g, "I tried to find a grid at self.g, but failed"
+        assert self.shares, "I tried to find shares at self.shares, but failed"
+        old_share_location = self.shares[share_number][2]
+        new_share_location = os.path.join(ss.storedir, "shares")
+        si = tahoe_uri.from_string(self.uri).get_storage_index()
+        new_share_location = os.path.join(new_share_location,
+                                          storage_index_to_dir(si))
+        if not os.path.exists(new_share_location):
+            os.makedirs(new_share_location)
+        new_share_location = os.path.join(new_share_location,
+                                          str(share_number))
+        if old_share_location != new_share_location:
+            shutil.copy(old_share_location, new_share_location)
+        shares = self.find_uri_shares(uri)
+        # Make sure that the storage server has the share.
+        self.failUnless((share_number, ss.my_nodeid, new_share_location)
+                        in shares)
+
+    def test_10_servers_9_shares(self):
+        # This test uploads 10 shares to 10 distinct servers and then deletes
+        # share 9. Since h = 7 and there are 9 shares on 9 distinct servers, this
+        # situation passes the servers-of-happiness test. Therefore it should be
+        # considered healthy.
+        self.basedir = "checker/HappyIsHealthy/test_10_servers_9_shares"
+        self.set_up_grid()
+        c0 = self.g.clients[0]
+        DATA = "data" * 100
+        d = c0.upload(Data(DATA, convergence=""))
+        def _stash_immutable(ur):
+            self.uri = ur.get_uri()
+            self.imm = c0.create_node_from_uri(ur.get_uri())
+        d.addCallback(_stash_immutable)
+        d.addCallback(lambda _: self.delete_shares_numbered(self.uri, [9]))
+        def _check_cr(cr):
+            self.failUnless(cr.is_healthy())
+        d.addCallback(lambda ign: self.imm.check(Monitor(), add_lease=True))
+        d.addCallback(_check_cr)
+        return d
+
+    def test_6_servers_10_shares(self):
+        # Under the old healthy criteria, we needed n shares to be healthy.
+        # Now shares must be placed on h distinct servers. This test case
+        # represents a scenario in which the old metric would pass, but where
+        # servers-of-happiness should fail.
+
+        # The test creates a grid with 7 servers and uploads 10 shares to
+        # the grid. Share 3 is moved from server 6 to server 0 and then server
+        # 6 is removed from the grid. This creates a situation where there are
+        # 10 good shares but only 6 good servers. Since h = 7, this test should
+        # fail regardless of how many shares there are.
+        self.basedir = "checker/HappyIsHealthy/test_6_servers_10_shares"
+        self.set_up_grid(num_servers=7)
+        c0 = self.g.clients[0]
+        DATA = "data" * 100
+        d = c0.upload(Data(DATA, convergence=""))
+        def _stash_immutable(ur):
+            self.uri = ur.get_uri()
+            self.imm = c0.create_node_from_uri(self.uri)
+        d.addCallback(_stash_immutable)
+        d.addCallback(lambda ign: self.find_uri_shares(self.uri))
+        def _store_shares(shares):
+            self.shares = shares
+        d.addCallback(_store_shares)
+        d.addCallback(lambda ign: self.copy_share_to_server(self.uri, 3, 0))
+        d.addCallback(lambda ign: self.g.remove_server(self.g.servers_by_number[6].my_nodeid))
+        def _check_cr(cr):
+            self.failUnlessEqual(6, len(self.g.get_all_serverids()))
+            self.failIf(cr.is_healthy())
+        d.addCallback(lambda ign: self.imm.check(Monitor(), add_lease=True))
+        d.addCallback(_check_cr)
+        return d
+
