@@ -22,13 +22,14 @@ from allmydata.immutable.downloader.status import DownloadStatus
 
 class CiphertextFileNode:
     def __init__(self, verifycap, storage_broker, secret_holder,
-                 terminator, history):
+                 terminator, history, happy):
         assert isinstance(verifycap, uri.CHKFileVerifierURI)
         self._verifycap = verifycap
         self._storage_broker = storage_broker
         self._secret_holder = secret_holder
         self._terminator = terminator
         self._history = history
+        self._happy = happy
         self._download_status = None
         self._node = None # created lazily, on read()
 
@@ -94,7 +95,8 @@ class CiphertextFileNode:
                     servers=self._storage_broker.get_connected_servers(),
                     verify=verify, add_lease=add_lease,
                     secret_holder=self._secret_holder,
-                    monitor=monitor)
+                    monitor=monitor,
+                    happy=self._happy)
         d = c.start()
         d.addCallback(self._maybe_repair, monitor)
         return d
@@ -141,11 +143,11 @@ class CiphertextFileNode:
         servers_responding = sorted(servers_responding)
 
         good_hosts = len(reduce(set.union, sm.values(), set()))
-        is_healthy = bool(len(sm) >= verifycap.total_shares)
+        is_healthy = bool(len(sm) >= self._happy)
         is_recoverable = bool(len(sm) >= verifycap.needed_shares)
 
         # TODO: this may be wrong, see ticket #1115 comment:27 and ticket #1784.
-        needs_rebalancing = bool(len(sm) >= verifycap.total_shares)
+        needs_rebalancing = bool(len(sm) >= self._happy)
 
         prr = CheckResults(cr.get_uri(), cr.get_storage_index(),
                            healthy=is_healthy, recoverable=is_recoverable,
@@ -179,7 +181,8 @@ class CiphertextFileNode:
 
         v = Checker(verifycap=verifycap, servers=servers,
                     verify=verify, add_lease=add_lease, secret_holder=sh,
-                    monitor=monitor)
+                    monitor=monitor,
+                    happy=self._happy)
         return v.start()
 
 class DecryptingConsumer:
@@ -232,11 +235,11 @@ class ImmutableFileNode:
 
     # I wrap a CiphertextFileNode with a decryption key
     def __init__(self, filecap, storage_broker, secret_holder, terminator,
-                 history):
+                 history, happy):
         assert isinstance(filecap, uri.CHKFileURI)
         verifycap = filecap.get_verify_cap()
         self._cnode = CiphertextFileNode(verifycap, storage_broker,
-                                         secret_holder, terminator, history)
+                                         secret_holder, terminator, history, happy)
         assert isinstance(filecap, uri.CHKFileURI)
         self.u = filecap
         self._readkey = filecap.key

@@ -7,7 +7,7 @@ from allmydata.hashtree import IncompleteHashTree
 from allmydata.check_results import CheckResults
 from allmydata.uri import CHKFileVerifierURI
 from allmydata.util.assertutil import precondition
-from allmydata.util import base32, deferredutil, dictutil, log, mathutil
+from allmydata.util import base32, deferredutil, dictutil, log, mathutil, happinessutil
 from allmydata.util.hashutil import file_renewal_secret_hash, \
      file_cancel_secret_hash, bucket_renewal_secret_hash, \
      bucket_cancel_secret_hash, uri_extension_hash, CRYPTO_VAL_SIZE, \
@@ -461,7 +461,7 @@ class Checker(log.PrefixingLogMixin):
     cancelled (by invoking its raise_if_cancelled() method).
     """
     def __init__(self, verifycap, servers, verify, add_lease, secret_holder,
-                 monitor):
+                 monitor, happy):
         assert precondition(isinstance(verifycap, CHKFileVerifierURI), verifycap, type(verifycap))
 
         prefix = "%s" % base32.b2a_l(verifycap.get_storage_index()[:8], 60)
@@ -473,6 +473,7 @@ class Checker(log.PrefixingLogMixin):
         self._servers = servers
         self._verify = verify # bool: verify what the servers claim, or not?
         self._add_lease = add_lease
+        self._happy = happy
 
         frs = file_renewal_secret_hash(secret_holder.get_renewal_secret(),
                                        self._verifycap.get_storage_index())
@@ -757,9 +758,10 @@ class Checker(log.PrefixingLogMixin):
                 servers_responding.add(server)
 
         good_share_hosts = len([s for s in servers.keys() if servers[s]])
+        is_healthy = happinessutil.servers_of_happiness(verifiedshares) >= self._happy
 
         assert len(verifiedshares) <= self._verifycap.total_shares, (verifiedshares.keys(), self._verifycap.total_shares)
-        if len(verifiedshares) == self._verifycap.total_shares:
+        if is_healthy:
             healthy = True
             summary = "Healthy"
         else:
@@ -779,7 +781,7 @@ class Checker(log.PrefixingLogMixin):
         # one share is less than the number of uniquely-numbered shares
         # available.
         # TODO: this may be wrong, see ticket #1115 comment:27 and ticket #1784.
-        needs_rebalancing = bool(good_share_hosts < len(verifiedshares))
+        needs_rebalancing = not is_healthy
 
         cr = CheckResults(self._verifycap, SI,
                           healthy=healthy, recoverable=bool(recoverable),

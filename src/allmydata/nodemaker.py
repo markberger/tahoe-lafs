@@ -34,12 +34,12 @@ class NodeMaker:
 
     def _create_lit(self, cap):
         return LiteralFileNode(cap)
-    def _create_immutable(self, cap):
+    def _create_immutable(self, cap, happy):
         return ImmutableFileNode(cap, self.storage_broker, self.secret_holder,
-                                 self.terminator, self.history)
-    def _create_immutable_verifier(self, cap):
+                                 self.terminator, self.history, happy)
+    def _create_immutable_verifier(self, cap, happy):
         return CiphertextFileNode(cap, self.storage_broker, self.secret_holder,
-                                  self.terminator, self.history)
+                                  self.terminator, self.history, happy)
     def _create_mutable(self, cap):
         n = MutableFileNode(self.storage_broker, self.secret_holder,
                             self.default_encoding_parameters,
@@ -95,12 +95,19 @@ class NodeMaker:
         return node
 
     def _create_from_single_cap(self, cap):
+        # This is necessary because there is no 'happy' key in
+        # default_encoding_parameters for mutable files since they do not
+        # use servers-of-happiness.
+        try:
+            happy = self.default_encoding_parameters['happy']
+        except Exception:
+            happy = None
         if isinstance(cap, uri.LiteralFileURI):
             return self._create_lit(cap)
         if isinstance(cap, uri.CHKFileURI):
-            return self._create_immutable(cap)
+            return self._create_immutable(cap, happy)
         if isinstance(cap, uri.CHKFileVerifierURI):
-            return self._create_immutable_verifier(cap)
+            return self._create_immutable_verifier(cap, happy)
         if isinstance(cap, (uri.ReadonlySSKFileURI, uri.WriteableSSKFileURI,
                             uri.WriteableMDMFFileURI, uri.ReadonlyMDMFFileURI)):
             return self._create_mutable(cap)
