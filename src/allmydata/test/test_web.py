@@ -66,7 +66,7 @@ class FakeNodeMaker(NodeMaker):
     }
     def _create_lit(self, cap):
         return FakeCHKFileNode(cap, self.all_contents)
-    def _create_immutable(self, cap):
+    def _create_immutable(self, cap, happy):
         return FakeCHKFileNode(cap, self.all_contents)
     def _create_mutable(self, cap):
         return FakeMutableFileNode(None, None,
