@@ -390,6 +390,8 @@ class BalancingAct(GridTestMixin, unittest.TestCase):
         for i in range(1,5):
             d.addCallback(add_three, i)
 
+        c0.DEFAULT_ENCODING_PARAMETERS['happy'] = 4
+
         def _check_and_repair(_):
             return self.imm.check_and_repair(Monitor())
         def _check_counts(crr, shares_good, good_share_hosts):
@@ -404,7 +406,7 @@ class BalancingAct(GridTestMixin, unittest.TestCase):
             0:[A] 1:[A] 2:[A] 3:[A,B,C,D,E]
           4 good shares, but 5 good hosts
         After deleting all instances of share #3 and repairing:
-            0:[A,B], 1:[A,C], 2:[A,D], 3:[E]
+            0:[A,B], 1:[A,E], 2:[A,C], 3:[D]
           Still 4 good shares and 5 good hosts
             """
         d.addCallback(_check_and_repair)
