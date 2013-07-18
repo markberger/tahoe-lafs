@@ -24,14 +24,10 @@ install_requires = [
     #   the drop-upload frontend.
     # * We also need Twisted 10.1 for the FTP frontend in order for Twisted's
     #   FTP server to support asynchronous close.
-    # * The cloud backend depends on Twisted 10.2.0 which includes the fix to
-    #   https://twistedmatrix.com/trac/ticket/411
     # * The SFTP frontend depends on Twisted 11.0.0 to fix the SSH server
     #   rekeying bug http://twistedmatrix.com/trac/ticket/4395
-    # * The cloud backend depends on Twisted 12.1.0 for HTTPConnectionPool.
-    # * IPv6 support will also depend on Twisted 12.1.0.
     #
-    "Twisted >= 12.1.0",
+    "Twisted >= 11.0.0",
 
     # * foolscap < 0.5.1 had a performance bug which spent O(N**2) CPU for
     #   transferring large mutable files of size N.
@@ -65,10 +61,6 @@ install_requires = [
 
     # pycryptopp-0.6.0 includes ed25519
     "pycryptopp >= 0.6.0",
-
-    # needed for cloud backend
-    "txAWS == 0.2.1.post5",
-    "oauth2client == 1.1.0",
 
     # Will be needed to test web apps, but not yet. See #1001.
     #"windmill >= 1.3",
