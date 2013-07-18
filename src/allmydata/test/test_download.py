@@ -1019,16 +1019,13 @@ class Corruption(_Base, unittest.TestCase):
             # off in the weeds somewhere), and Share treats DataUnavailable
             # as abandon-this-share, so in general we'll be forced to look
             # for a 4th share.
-            need_4th_victims = [12,13,14,15, # share version
-                                24,25,26,27, # offset[data]
-                                32,33,34,35, # offset[crypttext_hash_tree]
-                                36,37,38,39, # offset[block_hashes]
-                                44,45,46,47, # offset[UEB]
+            need_4th_victims = [12,13,14,15, # offset[data]
+                                24,25,26,27, # offset[block_hashes]
                                 ]
-            need_4th_victims.append(48) # block data
+            need_4th_victims.append(36) # block data
             # when corrupting hash trees, we must corrupt a value that isn't
             # directly set from somewhere else. Since we download data from
-            # seg0, corrupt something on its hash chain, like [2] (the
+            # seg2, corrupt something on its hash chain, like [2] (the
             # right-hand child of the root)
             need_4th_victims.append(600+2*32) # block_hashes[2]
             # Share.loop is pretty conservative: it abandons the share at the
@@ -1039,10 +1036,7 @@ class Corruption(_Base, unittest.TestCase):
             # the following fields (which are present in multiple shares)
             # should fall into the "need3_victims" case instead of the
             # "need_4th_victims" case.
-            need_4th_victims.append(376+2*32) # crypttext_hash_tree[2]
             need_4th_victims.append(824) # share_hashes
-            need_4th_victims.append(994) # UEB length
-            need_4th_victims.append(998) # UEB
             corrupt_me = ([(i,"no-sh2") for i in no_sh2_victims] +
                           [(i, "2bad-need-3") for i in need3_victims] +
                           [(i, "need-4th") for i in need_4th_victims])
