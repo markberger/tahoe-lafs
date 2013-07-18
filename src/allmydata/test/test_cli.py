@@ -3134,7 +3134,8 @@ class Check(GridTestMixin, CLITestMixin, unittest.TestCase):
         def _clobber_shares(ignored):
             shares = self.find_uri_shares(self.uris[u"g\u00F6\u00F6d"])
             self.failUnlessReallyEqual(len(shares), 10)
-            os.unlink(shares[0][2])
+            for i in range(4):
+                os.unlink(shares[i][2])
 
             shares = self.find_uri_shares(self.uris["mutable"])
             cso = debug.CorruptShareOptions()
@@ -3162,7 +3163,7 @@ class Check(GridTestMixin, CLITestMixin, unittest.TestCase):
             self.failUnless("'<root>': Healthy" in lines, out)
             self.failUnless("'small': Healthy (LIT)" in lines, out)
             self.failUnless("'mutable': Healthy" in lines, out) # needs verifier
-            self.failUnless((quoted_good + ": Not Healthy: 9 shares (enc 3-of-10)") in lines, out)
+            self.failUnless((quoted_good + ": Not Healthy: 6 shares (enc 3-of-10)") in lines, out)
             self.failIf(self._corrupt_share_line in lines, out)
             self.failUnless("done: 4 objects checked, 3 healthy, 1 unhealthy"
                             in lines, out)
@@ -3181,7 +3182,7 @@ class Check(GridTestMixin, CLITestMixin, unittest.TestCase):
             self.failUnless(mutable.startswith("'mutable': Unhealthy: 9 shares (enc 3-of-10)"),
                             mutable)
             self.failUnless(self._corrupt_share_line in lines, out)
-            self.failUnless((quoted_good + ": Not Healthy: 9 shares (enc 3-of-10)") in lines, out)
+            self.failUnless((quoted_good + ": Not Healthy: 6 shares (enc 3-of-10)") in lines, out)
             self.failUnless("done: 4 objects checked, 2 healthy, 2 unhealthy"
                             in lines, out)
         d.addCallback(_check4)
