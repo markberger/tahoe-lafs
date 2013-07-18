@@ -703,6 +703,8 @@ class Repairer(GridTestMixin, unittest.TestCase, RepairTestMixin,
     def test_servers_responding(self):
         self.basedir = "repairer/Repairer/servers_responding"
         self.set_up_grid(num_clients=2)
+        c0 = self.g.clients[0]
+        c0.DEFAULT_ENCODING_PARAMETERS['happy'] = 10
         d = self.upload_and_stash()
         # now cause one of the servers to not respond during the pre-repair
         # filecheck, but then *do* respond to the post-repair filecheck
