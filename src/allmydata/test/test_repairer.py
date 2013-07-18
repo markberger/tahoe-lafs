@@ -426,6 +426,8 @@ class Repairer(GridTestMixin, unittest.TestCase, RepairTestMixin,
         """ Repair replaces a share that got deleted. """
         self.basedir = "repairer/Repairer/repair_from_deletion_of_1"
         self.set_up_grid(num_clients=2)
+        c0 = self.g.clients[0]
+        c0.DEFAULT_ENCODING_PARAMETERS['happy'] = 10
         d = self.upload_and_stash()
 
         d.addCallback(lambda ignored:
