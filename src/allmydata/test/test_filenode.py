@@ -31,8 +31,8 @@ class Node(unittest.TestCase):
                            needed_shares=3,
                            total_shares=10,
                            size=1000)
-        fn1 = ImmutableFileNode(u, None, None, None, None)
-        fn2 = ImmutableFileNode(u, None, None, None, None)
+        fn1 = ImmutableFileNode(u, None, None, None, None, happy=None)
+        fn2 = ImmutableFileNode(u, None, None, None, None, happy=None)
         self.failUnlessEqual(fn1, fn2)
         self.failIfEqual(fn1, "I am not a filenode")
         self.failIfEqual(fn1, NotANode())
