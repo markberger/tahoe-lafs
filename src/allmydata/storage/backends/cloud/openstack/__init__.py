@@ -1,4 +1,0 @@
-
-from allmydata.storage.backends.cloud.openstack.openstack_container import configure_openstack_container
-
-configure_container = configure_openstack_container

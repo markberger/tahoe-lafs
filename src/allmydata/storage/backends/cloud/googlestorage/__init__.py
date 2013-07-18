@@ -1,3 +1,0 @@
-from allmydata.storage.backends.cloud.googlestorage.googlestorage_container import configure_googlestorage_container
-
-configure_container = configure_googlestorage_container
