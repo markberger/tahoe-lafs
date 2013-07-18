@@ -1047,7 +1047,10 @@ class Corruption(_Base, unittest.TestCase):
                           [(i, "2bad-need-3") for i in need3_victims] +
                           [(i, "need-4th") for i in need_4th_victims])
             if self.catalog_detection:
-                corrupt_me = [(i, "") for i in range(len(self.sh0_orig))]
+                share_len = len(self.shares.values()[0])
+                corrupt_me = [(i, "") for i in range(share_len)]
+                # This is a work around for ticket #2024.
+                corrupt_me = corrupt_me[0:8]+corrupt_me[12:]
             for i,expected in corrupt_me:
                 # All these tests result in a successful download. What we're
                 # measuring is how many shares the downloader had to use.
@@ -1066,9 +1069,10 @@ class Corruption(_Base, unittest.TestCase):
             return d
         d.addCallback(_uploaded)
         def _show_results(ign):
+            share_len = len(self.shares.values()[0])
             print
             print ("of [0:%d], corruption ignored in %s" %
-                   (len(self.sh0_orig), undetected.dump()))
+                   (share_len, undetected.dump()))
         if self.catalog_detection:
             d.addCallback(_show_results)
             # of [0:2070], corruption ignored in len=1133:
