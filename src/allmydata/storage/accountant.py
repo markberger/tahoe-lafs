@@ -57,3 +57,6 @@ class Accountant(service.MultiService):
             else:
                 yield Account(ownerid, pubkey_vs,
                               self.storage_server, self._leasedb)
+
+    def get_total_leased_sharecount_and_used_space(self):
+        return self._leasedb.get_total_leased_sharecount_and_used_space()

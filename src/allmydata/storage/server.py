@@ -167,11 +167,8 @@ class StorageServer(service.MultiService):
 
         self.backend.fill_in_space_stats(stats)
 
-        if self.bucket_counter:
-            s = self.bucket_counter.get_state()
-            bucket_count = s.get("last-complete-bucket-count")
-            if bucket_count:
-                stats['storage_server.total_bucket_count'] = bucket_count
+        num_shares, total_size = self.accountant.get_total_leased_sharecount_and_used_space()
+        stats['storage_server.total_bucket_count'] = num_shares
         return stats
 
     def get_available_space(self):
