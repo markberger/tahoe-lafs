@@ -60,3 +60,6 @@ class Accountant(service.MultiService):
 
     def get_total_leased_sharecount_and_used_space(self):
         return self._leasedb.get_total_leased_sharecount_and_used_space()
+
+    def get_number_of_sharesets(self):
+        return self._leasedb.get_number_of_sharesets()

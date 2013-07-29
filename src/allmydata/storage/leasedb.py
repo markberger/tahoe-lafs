@@ -383,3 +383,6 @@ class LeaseDB(service.Service):
                                 " GROUP BY s.`storage_index`, s.`shnum`)")
         return self._cursor.fetchall()[0]
 
+    def get_number_of_sharesets(self):
+        self._cursor.execute("SELECT COUNT(DISTINCT `storage_index`) AS si_num FROM `shares`")
+        return self._cursor.fetchall()[0][0]
