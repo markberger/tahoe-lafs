@@ -23,7 +23,7 @@ class Happiness_Upload:
 
 
     def generate_mappings(self):
-    
+
         #Generate a flow network of peerids to existing shareids and find
         #its maximum spanning graph. The leases of these shares should be renewed
         #by the client.
@@ -39,13 +39,13 @@ class Happiness_Upload:
                     readonly_shares.add(share)
 
         peer_to_index = self._index_peers(readonly_peers, 1)
-        share_to_index, index_to_share = self._reindex_shares(readonly_shares, 
+        share_to_index, index_to_share = self._reindex_shares(readonly_shares,
                                                         len(readonly_peers) + 1)
-        graph = self._servermap_flow_graph(readonly_peers, readonly_shares, 
+        graph = self._servermap_flow_graph(readonly_peers, readonly_shares,
                                                                 readonly_map)
         shareids = [share_to_index[s] for s in readonly_shares]
         max_graph = self._compute_maximum_graph(graph, shareids)
-        readonly_mappings = self._convert_mappings(peer_to_index, 
+        readonly_mappings = self._convert_mappings(peer_to_index,
                                                     index_to_share, max_graph)
 
         used_peers, used_shares = self._extract_ids(readonly_mappings)
@@ -67,12 +67,12 @@ class Happiness_Upload:
 
         #Reindex and find the maximum matching of the graph
         peer_to_index = self._index_peers(peers, 1)
-        share_to_index, index_to_share = self._reindex_shares(shares, 
+        share_to_index, index_to_share = self._reindex_shares(shares,
                                                                 len(peers) + 1)
         graph = self._servermap_flow_graph(peers, shares, servermap)
         shareids = [share_to_index[s] for s in shares]
         max_server_graph = self._compute_maximum_graph(graph, shareids)
-        existing_mappings = self._convert_mappings(peer_to_index, 
+        existing_mappings = self._convert_mappings(peer_to_index,
                                             index_to_share, max_server_graph)
 
         #Extract successful shareids and peerids that can be reused
@@ -86,16 +86,16 @@ class Happiness_Upload:
         #and shares which cannot be reused from previous file allocations.
         #These mappings represent new allocations the uploader must make.
         peer_to_index = self._index_peers(peers, 1)
-        share_to_index, index_to_share = self._reindex_shares(shares, 
+        share_to_index, index_to_share = self._reindex_shares(shares,
                                                                 len(peers) + 1)
         peerids = [peer_to_index[peer] for peer in peers]
         shareids = [share_to_index[share] for share in shares]
         graph = self._flow_network(peerids, shareids)
         max_graph = self._compute_maximum_graph(graph, shareids)
-        new_mappings = self._convert_mappings(peer_to_index, index_to_share, 
+        new_mappings = self._convert_mappings(peer_to_index, index_to_share,
                                                                     max_graph)
-        
-        mappings = dict(readonly_mappings.items() + existing_mappings.items() 
+
+        mappings = dict(readonly_mappings.items() + existing_mappings.items()
                                                         + new_mappings.items())
         self._calculate_happiness(mappings)
         if len(self.homeless_shares) != 0:
@@ -133,7 +133,7 @@ class Happiness_Upload:
 
     def happiness(self):
         return self.happy
-    
+
 
     def _distribute_homeless_shares(self, mappings):
         """
@@ -143,7 +143,7 @@ class Happiness_Upload:
         available peers. If possible a share will be placed on the server it was
         originally on, signifying the lease should be renewed instead.
         """
-        
+
         #First check to see if the leases can be renewed
         to_distribute = set()
 
@@ -160,7 +160,7 @@ class Happiness_Upload:
 
         #Build priority queue of peers with the number of shares
         #each peer holds as the priority
-        
+
         priority = {}
         pQueue = PriorityQueue()
         for peerid in self.peerids:
@@ -170,7 +170,7 @@ class Happiness_Upload:
                 for peer in mappings[share]:
                     if peer in self.peerids:
                         priority[peer] += 1
-        
+
         if priority == {}:
             return
 
@@ -197,7 +197,7 @@ class Happiness_Upload:
             if peer == None:
                 converted_mappings.setdefault(share_to_index[share], None)
             else:
-                converted_mappings.setdefault(share_to_index[share], 
+                converted_mappings.setdefault(share_to_index[share],
                                                     set([peer_to_index[peer]]))
         return converted_mappings
 
@@ -239,7 +239,7 @@ class Happiness_Upload:
             base += 1
         return reindex_to_name
 
-    
+
     def _reindex_shares(self, shares, base):
         """
         I create a dictionary of sharenum -> index and a dictionary of
@@ -263,7 +263,7 @@ class Happiness_Upload:
         Specifically, it is the Edmonds-Karp algorithm, since it uses a
         BFS to find the shortest augmenting path at each iteration, if one
         exists.
-        
+
         The implementation here is an adapation of an algorithm described in
         "Introduction to Algorithms", Cormen et al, 2nd ed., pp 658-662.
         """
@@ -304,7 +304,7 @@ class Happiness_Upload:
     def _flow_network(self, peerids, shareids):
         """
         Given set of peerids and shareids, I create a flow network
-        to be used by _compute_maximum_graph. 
+        to be used by _compute_maximum_graph.
         """
         graph = []
         graph.append(peerids)

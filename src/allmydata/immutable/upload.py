@@ -637,7 +637,7 @@ class Tahoe2ServerSelector(log.PrefixingLogMixin):
                 self.homeless_shares |= still_homeless
                 # Since they were unable to accept all of our requests, so it
                 # is safe to assume that asking them again won't help.
-            
+
 
         # now loop
         return self._loop()
