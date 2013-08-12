@@ -3059,6 +3059,29 @@ class Check(GridTestMixin, CLITestMixin, unittest.TestCase):
 
         return d
 
+    def test_cli_ignores_happy(self):
+        self.basedir = "cli/Check/cli_ignores_happy"
+        self.set_up_grid(num_servers=4)
+        c0 = self.g.clients[0]
+        c0.DEFAULT_ENCODING_PARAMETERS["k"] = 2
+        c0.DEFAULT_ENCODING_PARAMETERS["happy"] = 4
+        c0.DEFAULT_ENCODING_PARAMETERS["n"] = 4
+        data = upload.Data("data" * 10000, convergence="")
+        d = c0.upload(data)
+        def _setup(ur):
+            self.uri = ur.get_uri()
+            self.delete_shares_numbered(self.uri, [1])
+        d.addCallback(_setup)
+        d.addCallback(lambda ign: self.do_cli("check", "--repair", self.uri))
+        def _check((rc, out, err)):
+            self.failUnlessReallyEqual(err, "")
+            self.failUnlessReallyEqual(rc, 0)
+            lines = out.splitlines()
+            self.failUnless("Summary: not healthy" in lines, out)
+            self.failUnless(" good-shares: 3 (encoding is 2-of-4)" in lines, out)
+        d.addCallback(_check)
+        return d
+
     def test_deep_check(self):
         self.basedir = "cli/Check/deep_check"
         self.set_up_grid()
