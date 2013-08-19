@@ -25,7 +25,7 @@ class StorageServer(service.MultiService):
     def __init__(self, serverid, backend, statedir,
                  stats_provider=None,
                  expiration_policy=None,
-                 clock=None):
+                 clock=None, sizelimit=None):
         service.MultiService.__init__(self)
         precondition(IStorageBackend.providedBy(backend), backend)
         precondition(isinstance(serverid, str), serverid)
@@ -33,6 +33,7 @@ class StorageServer(service.MultiService):
 
         self._serverid = serverid
         self.clock = clock or reactor
+        self.sizelimit = sizelimit
         self.stats_provider = stats_provider
         if self.stats_provider:
             self.stats_provider.register_producer(self)
@@ -211,6 +212,11 @@ class StorageServer(service.MultiService):
             # get_available_space.
             remaining_space -= self.allocated_size()
             # If the backend is read-only, remaining_space will be <= 0.
+
+        sizelimit = self.sizelimit
+        sharecount, used_space = self.accountant.get_total_leased_sharecount_and_used_space()
+        if sizelimit is not None:
+            remaining_space = min(remaining_space, self.sizelimit - used_space)
 
         # Fill alreadygot with all shares that we have, not just the ones
         # they asked about: this will save them a lot of work. Leases will

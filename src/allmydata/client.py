@@ -23,6 +23,7 @@ from allmydata.introducer.client import IntroducerClient
 from allmydata.util import hashutil, base32, pollmixin, log, keyutil, idlib
 from allmydata.util.encodingutil import get_filesystem_encoding, quote_output
 from allmydata.util.time_format import parse_duration, parse_date
+from allmydata.util.abbreviate import parse_abbreviated_size
 from allmydata.stats import StatsProvider
 from allmydata.history import History
 from allmydata.interfaces import IStatsProducer, SDMF_VERSION, MDMF_VERSION
@@ -316,9 +317,17 @@ class Client(node.Node, pollmixin.PollMixin):
         expiration_policy = ExpirationPolicy(enabled=expire, mode=mode, override_lease_duration=o_l_d,
                                              cutoff_date=cutoff_date)
 
+        data = self.get_config("storage", "sizelimit", None)
+        try:
+            limit = parse_abbreviated_size(data)
+        except ValueError:
+            log.msg("[storage]sizelimit= contains unparseable value %s"
+                    % data)
+            raise
+
         statedir = storedir
         ss = StorageServer(self.nodeid, backend, statedir,
-                           stats_provider=self.stats_provider)
+                           stats_provider=self.stats_provider, sizelimit=limit)
         self.accountant = ss.get_accountant()
         self.accountant.set_expiration_policy(expiration_policy)
         self.storage_server = ss
