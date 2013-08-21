@@ -381,7 +381,10 @@ class LeaseDB(service.Service):
                                 " FROM `shares` s JOIN `leases` l"
                                 " ON (s.`storage_index` = l.`storage_index` AND s.`shnum` = l.`shnum`)"
                                 " GROUP BY s.`storage_index`, s.`shnum`)")
-        return self._cursor.fetchall()[0]
+        share_count, used_space = self._cursor.fetchall()[0]
+        if share_count == 0 and used_space is None:
+            used_space = 0
+        return share_count, used_space
 
     def get_number_of_sharesets(self):
         self._cursor.execute("SELECT COUNT(DISTINCT `storage_index`) AS si_num FROM `shares`")
