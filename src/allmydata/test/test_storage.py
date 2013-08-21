@@ -1053,6 +1053,33 @@ class ServerTest(ServerMixin, ShouldFailMixin):
         sa.remote_renew_lease("si1", "")
         self.compare_leases(all_leases2, sa.get_leases("si1"), with_timestamps=False)
 
+    def test_sizelimit(self):
+        sizelimit = 5000
+        server = self.create('test_sizelimit')
+        server.sizelimit = sizelimit
+        aa = server.get_accountant().get_anonymous_account()
+
+        d = self.allocate(aa, "vid1", [0,1,2], 1000)
+        def _allocated( (already, writers) ):
+            self.failUnlessEqual(len(writers), 3)
+            self.failUnlessEqual(len(server._active_writers), 3)
+
+            # We have 2000 remaining so we should only have room for one 1001 share.
+            d2 = self.allocate(aa, "vid2", [0,1,2], 1001)
+            def _allocated2( (already2, writers2) ):
+                self.failUnlessEqual(len(writers2), 1)
+                self.failUnlessEqual(len(server._active_writers), 4)
+            d2.addCallback(_allocated2)
+
+            # We have three 1000 shares and one 1001 share so we should reject more 1000 shares
+            d2.addCallback(lambda ign: self.allocate(aa, "vid3", [0,1,2], 1000))
+            def _allocated3( (already, writers) ):
+                self.failUnlessEqual(len(writers), 0)
+                self.failUnlessEqual(len(server._active_writers), 4)
+            d2.addCallback(_allocated3)
+            return d2
+        d.addCallback(_allocated)
+        return d
 
 class MutableServerMixin:
     def write_enabler(self, we_tag):
@@ -2030,6 +2057,32 @@ class ServerWithDiskBackend(WithDiskBackend, ServerTest, unittest.TestCase):
             self.failUnlessEqual(already, set())
             self.failUnlessEqual(set(writers.keys()), set([0,1,2]))
         d.addCallback(_allocated2)
+        return d
+
+    @mock.patch('allmydata.util.fileutil.get_disk_stats')
+    def test_sizelimit_with_reserved_space(self, mock_get_disk_stats):
+        reserved_space = 10000
+        mock_get_disk_stats.return_value = {
+            'free_for_nonroot': 15000,
+            'avail': max(20000 - reserved_space, 0)
+        }
+        sizelimit = 5000
+        server = self.create('test_sizelimit_with_reserved_space', reserved_space=reserved_space)
+        server.sizelimit = sizelimit
+        aa = server.get_accountant().get_anonymous_account()
+
+        # 20k available, 10k reserved, with a 5k sizelimit leaves room for 5k
+        d = self.allocate(aa, "vid1", [0], 6000)
+        def _check_allocation_failed( (already, writers) ):
+            self.failUnlessEqual(len(writers), 0)
+            self.failUnlessEqual(len(server._active_writers), 0)
+        d.addCallback(_check_allocation_failed)
+        # Now set sizelimit to 15k, so we should reject anything above 10k.
+        def _set_sizelimit(size):
+            server.sizelimit = size
+        d.addCallback(lambda ign: _set_sizelimit(15000))
+        d.addCallback(lambda ign: self.allocate(aa, "vid2", [0], 11000))
+        d.addCallback(_check_allocation_failed)
         return d
 
     @mock.patch('allmydata.util.fileutil.get_disk_stats')
