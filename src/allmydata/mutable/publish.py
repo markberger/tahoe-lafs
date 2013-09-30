@@ -909,9 +909,40 @@ class Publish:
                  level=log.NOISY)
 
     def update_goal(self):
+        from allmydata.immutable.happiness_upload import Happiness_Upload
+
         # if log.recording_noisy
         if True:
             self.log_goal(self.goal, "before update: ")
+
+        idToServer = {}
+        for server in self.full_serverlist:
+            idToServer[server.get_serverid()] = server
+        available_servers = set([server.get_serverid() for server in self.full_serverlist
+                                if server not in self.bad_servers])
+        readonly_servers = set()
+        shares = set(range(self.total_shares))
+        servermap = DictOfSets()
+        for pair in self._servermap.get_known_shares():
+            serverid = pair[0].get_serverid()
+            share_num = pair[1]
+            servermap.add(serverid, share_num)
+
+        h = Happiness_Upload(available_servers, readonly_servers, shares, servermap)
+        mappings = h.generate_mappings()
+        if self.happy > h.happiness():
+            msg = ("shares could be placed on only %d server(s) such that any %d "
+                    "of them have enough shares to recover the file, but we were asked to "
+                    "place shares on at least %d servers." % (h.happiness(), self.required_shares, self.happy))
+            raise UploadUnhappinessError(msg)
+
+        for share_num in mappings:
+            for serverid in mappings[share_num]:
+                self.goal.add( (idToServer[serverid], share_num) )
+
+        if True:
+            self.log_goal(self.goal, "after update: ")
+        return
 
         sharemap = DictOfSets()
 
@@ -991,9 +1022,6 @@ class Publish:
                     "of them have enough shares to recover the file, but we were asked to "
                     "place shares on at least %d servers." % (h, self.required_shares, self.happy))
             raise UploadUnhappinessError(msg)
-
-        if True:
-            self.log_goal(self.goal, "after update: ")
 
 
     def _got_write_answer(self, answer, writer, started):
