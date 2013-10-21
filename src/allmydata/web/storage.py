@@ -30,6 +30,8 @@ class StorageStatus(rend.Page):
         req.setHeader("content-type", "text/plain")
         accounting_crawler = self.storage.get_accounting_crawler()
         d = {"stats": self.storage.get_stats(),
+             # We preserve this field for compatibility but it is no longer used.
+             # Bucket-counter has been replaced by lease db.
              "bucket-counter": None,
              "lease-checker": accounting_crawler.get_state(),
              "lease-checker-progress": accounting_crawler.get_progress(),
