@@ -1016,14 +1016,6 @@ class Publish:
             if i >= len(serverlist):
                 i = 0
 
-        h = servers_of_happiness(sharemap)
-        if self.happy > h:
-            msg = ("shares could be placed on only %d server(s) such that any %d "
-                    "of them have enough shares to recover the file, but we were asked to "
-                    "place shares on at least %d servers." % (h, self.required_shares, self.happy))
-            raise UploadUnhappinessError(msg)
-
-
     def _got_write_answer(self, answer, writer, started):
         if not answer:
             # SDMF writers only pretend to write when readers set their
